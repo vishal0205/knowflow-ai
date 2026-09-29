@@ -1,0 +1,92 @@
+[
+  {
+    "question": "How many days can employees work remotely?",
+    "expected_source": "remote_work_policy.pdf",
+    "ground_truth": "Employees may work remotely up to three days per week, subject to manager approval.",
+    "answerable": true
+  },
+  {
+    "question": "Who must approve remote work?",
+    "expected_source": "remote_work_policy.pdf",
+    "ground_truth": "Remote work is subject to manager approval.",
+    "answerable": true
+  },
+  {
+    "question": "What security requirements apply when working remotely?",
+    "expected_source": "remote_work_policy.pdf",
+    "ground_truth": "Employees must maintain a secure working environment and follow company security requirements when working remotely.",
+    "answerable": true
+  },
+  {
+    "question": "What should employees do if they suspect a security incident?",
+    "expected_source": "security_policy.pdf",
+    "ground_truth": "Employees must report suspected security incidents to the IT security team immediately.",
+    "answerable": true
+  },
+  {
+    "question": "Are employees allowed to share company passwords?",
+    "expected_source": "security_policy.pdf",
+    "ground_truth": "No. Employees must never share company passwords or credentials with other individuals.",
+    "answerable": true
+  },
+  {
+    "question": "What must employees do when leaving their workspace?",
+    "expected_source": "security_policy.pdf",
+    "ground_truth": "Employees must lock their computers when leaving their workspace.",
+    "answerable": true
+  },
+  {
+    "question": "Who is eligible for the company's health insurance program?",
+    "expected_source": "benefits_policy.pdf",
+    "ground_truth": "Full-time employees are eligible for the company's health insurance program.",
+    "answerable": true
+  },
+  {
+    "question": "Can employees enroll qualifying dependents in health insurance?",
+    "expected_source": "benefits_policy.pdf",
+    "ground_truth": "Yes. Eligible employees may enroll themselves and qualifying dependents during the enrollment period.",
+    "answerable": true
+  },
+  {
+    "question": "Who should employees contact about benefits enrollment?",
+    "expected_source": "benefits_policy.pdf",
+    "ground_truth": "Employees should contact Human Resources for questions about enrollment and coverage.",
+    "answerable": true
+  },
+  {
+    "question": "How should employees submit planned leave requests?",
+    "expected_source": "leave_policy.pdf",
+    "ground_truth": "Employees should submit planned leave requests through the company's leave management system.",
+    "answerable": true
+  },
+  {
+    "question": "What does the policy say about parental leave?",
+    "expected_source": "leave_policy.pdf",
+    "ground_truth": "Eligible employees may apply for parental leave according to company policy.",
+    "answerable": true
+  },
+  {
+    "question": "When should sick leave be reported?",
+    "expected_source": "leave_policy.pdf",
+    "ground_truth": "Sick leave should be reported to the employee's manager as soon as reasonably possible.",
+    "answerable": true
+  },
+  {
+    "question": "What is the company's stock option policy?",
+    "expected_source": null,
+    "ground_truth": null,
+    "answerable": false
+  },
+  {
+    "question": "What is the company's travel reimbursement policy?",
+    "expected_source": null,
+    "ground_truth": null,
+    "answerable": false
+  },
+  {
+    "question": "What programming languages does the company use?",
+    "expected_source": null,
+    "ground_truth": null,
+    "answerable": false
+  }
+]
