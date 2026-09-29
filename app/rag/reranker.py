@@ -1,25 +1,34 @@
 from sentence_transformers import CrossEncoder
 
-
 MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
-reranker = CrossEncoder(MODEL_NAME)
+_reranker = None
+
+
+def get_reranker():
+    global _reranker
+
+    if _reranker is None:
+        _reranker = CrossEncoder(
+            MODEL_NAME,
+            device="cpu",
+        )
+
+    return _reranker
 
 
 def rerank_documents(query: str, documents, top_k: int = 5):
-    """
-    Rerank retrieved documents using a cross-encoder.
-    """
-
     if not documents:
         return []
 
-    pairs = [
-        (query, document.content)
-        for document in documents
-    ]
+    reranker = get_reranker()
 
-    scores = reranker.predict(pairs)
+    pairs = [(query, document.content) for document in documents]
+
+    scores = reranker.predict(
+        pairs,
+        batch_size=4,
+    )
 
     ranked = sorted(
         zip(documents, scores),
