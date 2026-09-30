@@ -1,7 +1,5 @@
 import time
 
-from websockets import route
-
 from app.rag.hybrid_search import hybrid_search
 from app.rag.reranker import rerank_documents
 from app.rag.llm import generate_answer
