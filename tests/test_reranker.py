@@ -1,48 +1,43 @@
-from app.rag.retriever import search_documents
-from app.rag.hybrid_search import (
-    bm25_search,
-    reciprocal_rank_fusion,
-)
-from app.rag.reranker import rerank_documents
+from types import SimpleNamespace
+
+from app.rag import reranker
 
 
-query = "How many days can employees work remotely?"
+class FakeCrossEncoder:
+    """Pretends to be the real model: longer text gets a higher score."""
 
-# Step 1: Vector retrieval
-vector_results = search_documents(query, k=10)
-
-# Step 2: BM25
-bm25_results = bm25_search(
-    query,
-    k=10,
-)
-
-# Step 3: RRF
-hybrid_results = reciprocal_rank_fusion(
-    vector_results,
-    bm25_results,
-)
-# Step 4: Reranking
-reranked_results = rerank_documents(
-    query,
-    hybrid_results,
-    top_k=5,
-)
+    def predict(self, pairs, batch_size=4):
+        return [len(text) for _, text in pairs]
 
 
-print(f"\nQuery: {query}\n")
+def make_doc(content):
+    return SimpleNamespace(content=content)
 
-for i, (doc, score) in enumerate(
-    reranked_results,
-    start=1,
-):
-    print("=" * 70)
-    print(f"RERANKED RESULT {i}")
-    print("=" * 70)
 
-    print("Reranker score:", float(score))
-    print("Source:", doc.source)
-    print("Page:", doc.page)
+def test_rerank_sorts_by_score_highest_first(monkeypatch):
+    monkeypatch.setattr(reranker, "get_reranker", lambda: FakeCrossEncoder())
+    docs = [make_doc("short"), make_doc("a much longer passage"), make_doc("medium one")]
 
-    print("\nContent:")
-    print(doc.content)
+    ranked = reranker.rerank_documents("query", docs, top_k=3)
+
+    assert [doc.content for doc, _ in ranked] == [
+        "a much longer passage",
+        "medium one",
+        "short",
+    ]
+
+
+def test_rerank_respects_top_k(monkeypatch):
+    monkeypatch.setattr(reranker, "get_reranker", lambda: FakeCrossEncoder())
+    docs = [make_doc("a" * n) for n in range(1, 8)]
+
+    assert len(reranker.rerank_documents("query", docs, top_k=3)) == 3
+
+
+def test_rerank_empty_list_does_not_load_the_model(monkeypatch):
+    def should_not_be_called():
+        raise AssertionError("model should not load for empty input")
+
+    monkeypatch.setattr(reranker, "get_reranker", should_not_be_called)
+
+    assert reranker.rerank_documents("query", []) == []
