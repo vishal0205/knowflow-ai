@@ -1,11 +1,11 @@
-
+# KnowFlow AI
 
 ![CI](https://github.com/vishal0205/knowflow-ai/actions/workflows/ci.yml/badge.svg)
 
 > **Hybrid-retrieval RAG knowledge assistant with cited answers and abstention**
 
 
-KnowFlow AI is an Hybrid-style knowledge assistant that answers questions from an organization's internal documents instead of relying only on a general-purpose LLM.
+KKnowFlow AI is a knowledge assistant that answers questions from an organization's internal documents instead of relying only on a general-purpose LLM.
 
 The system retrieves relevant document passages, combines semantic and keyword search, reranks the results, and generates grounded answers with source citations. When the required information is not available, it abstains instead of inventing an answer.
 
@@ -412,7 +412,7 @@ Swagger API documentation:
 http://127.0.0.1:8000/docs
 ```
 
-### 8. Run the frontend
+### 9. Run the frontend
 
 ```powershell
 cd frontend
@@ -516,6 +516,9 @@ Re-indexing an unchanged document wastes computation and can create unnecessary 
 - Authentication and a complete user-management system are not included.
 - Evaluation results are based on the project's test dataset rather than a production workload.
 - The current document ingestion path focuses on PDF documents.
+- `access_level` is sent by the client and there is no authentication, so the department and access filters demonstrate metadata filtering, not secure access control.
+- The BM25 index is rebuilt from the database on every query. This is fine for a small corpus but would need caching at larger scale.
+- The keyword-based query router can misroute some company questions (for example, ones containing "Python code").
 
 ## Future Improvements
 
@@ -525,7 +528,7 @@ Re-indexing an unchanged document wastes computation and can create unnecessary 
 - Document upload management UI
 - Advanced query decomposition / multi-hop retrieval
 - Production monitoring dashboards
-- CI/CD deployment
+- Cloud deployment (CD)
 - Larger evaluation datasets
 - More comprehensive permission models
 
