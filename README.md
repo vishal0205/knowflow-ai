@@ -1,8 +1,11 @@
-# KnowFlow AI
 
-> **Enterprise Knowledge Assistant powered by Retrieval-Augmented Generation (RAG)**
 
-KnowFlow AI is an enterprise-style knowledge assistant that answers questions from an organization's internal documents instead of relying only on a general-purpose LLM.
+![CI](https://github.com/vishal0205/knowflow-ai/actions/workflows/ci.yml/badge.svg)
+
+> **Hybrid-retrieval RAG knowledge assistant with cited answers and abstention**
+
+
+KnowFlow AI is an Hybrid-style knowledge assistant that answers questions from an organization's internal documents instead of relying only on a general-purpose LLM.
 
 The system retrieves relevant document passages, combines semantic and keyword search, reranks the results, and generates grounded answers with source citations. When the required information is not available, it abstains instead of inventing an answer.
 
@@ -68,7 +71,7 @@ The goal is to make answers traceable to the organization's source documents and
                                │
                                ▼
                     ┌──────────────────────┐
-                    │      FastAPI API      │
+                    │      FastAPI API     │
                     └──────────┬───────────┘
                                │
                                ▼
@@ -81,9 +84,9 @@ The goal is to make answers traceable to the organization's source documents and
               │       Hybrid Retrieval         │
               │                                │
               │  pgvector       BM25           │
-              │      \             /            │
-              │       \           /             │
-              │        └── RRF ──┘              │
+              │      \             /           │
+              │       \           /            │
+              │        └── RRF ──┘             │
               └────────────────┬───────────────┘
                                │
                                ▼
@@ -220,6 +223,17 @@ Current evaluation results:
 
 > These results are from the project's current evaluation dataset and should not be interpreted as production-level accuracy guarantees.
 
+The evaluation set has **15 questions (12 answerable, 3 unanswerable)** over a small demo corpus. The numbers show the pipeline works on this data, not how it would perform at scale.
+
+Run the evaluations from the project root:
+
+```powershell
+python -m evals.evaluate_retrieval
+python -m evals.evaluate_ragas
+```
+
+`evaluate_ragas` uses a Groq-hosted model as the judge, so it needs `GROQ_API_KEY` in `.env`. The app itself only needs `GEMINI_API_KEY`.
+
 ## Tech Stack
 
 ### Backend
@@ -291,11 +305,25 @@ knowflow-ai/
 │   └── evaluate_ragas.py
 │
 ├── tests/
+│   ├── conftest.py
+│   ├── test_api.py
+│   ├── test_hybrid_search.py
+│   ├── test_ingestion_and_indexing.py
+│   ├── test_integration.py
+│   ├── test_pipeline.py
+│   ├── test_query_router.py
+│   └── test_reranker.py
+│
+├── scripts/
+│   ├── index_all.py
+│   └── index_pdf.py
 │
 ├── frontend/
 │   └── src/
 │
+├── .github/workflows/ci.yml
 ├── data/
+├── pytest.ini
 ├── requirements.txt
 ├── docker-compose.yml
 └── README.md
@@ -356,7 +384,17 @@ Never commit `.env` or API keys to GitHub.
 python -m app.db.create_tables
 ```
 
-### 7. Run the backend
+### 7. Add and index documents
+
+Put your PDF files in `data/documents/` (create the folder if needed), then run:
+
+```powershell
+python -m scripts.index_all
+```
+
+To index a single file, edit the path in `scripts/index_pdf.py` and run `python -m scripts.index_pdf`.
+
+### 8. Run the backend
 
 ```powershell
 uvicorn app.main:app --reload
@@ -424,14 +462,19 @@ The API returns the grounded answer and source information.
 
 ## Testing
 
-Run the full test suite:
+The project has two kinds of tests.
+
+**Unit tests** replace the database, the Gemini API and the ML models with mocks, so they need no setup. They cover query routing, Reciprocal Rank Fusion, BM25 search, reranking, the pipeline (citations and abstention), the FastAPI endpoints, and document hashing. They run automatically on every push with GitHub Actions.
 
 ```powershell
-pytest -q
+pytest -m "not integration"
 ```
 
-The current test suite covers database functionality, embeddings, retrieval, hybrid search, indexing, reranking, the LLM pipeline, and related components.
+**Integration tests** need the real PostgreSQL database, a Gemini API key and indexed documents, so they run locally only:
 
+```powershell
+pytest -m integration
+```
 ## Example Questions
 
 The demo knowledge base supports questions such as:
