@@ -1,16 +1,15 @@
+
+import hashlib
 from pathlib import Path
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.database import engine
 from app.db.models import Document, DocumentChunk
 from app.rag.embeddings import get_embedding_model
 from app.rag.ingestion import load_and_split_pdf
-import hashlib
-from pathlib import Path
 
-from sqlalchemy import delete, select
 
 def calculate_file_hash(file_path: str) -> str:
     hasher = hashlib.sha256()
@@ -20,6 +19,7 @@ def calculate_file_hash(file_path: str) -> str:
             hasher.update(chunk)
 
     return hasher.hexdigest()
+
 
 def get_document_permissions(file_path: str):
     filename = Path(file_path).name
@@ -50,7 +50,6 @@ def get_or_create_document(
         return document
 
     department, access_level = get_document_permissions(file_path)
-
     document_id = Path(filename).stem.replace("_", "-")
 
     document = Document(
@@ -67,10 +66,25 @@ def get_or_create_document(
 
     return document
 
+
 def index_pdf(file_path: str):
     file_hash = calculate_file_hash(file_path)
     filename = Path(file_path).name
     source = str(Path(file_path))
+
+    # Parse and validate BEFORE changing any database records.
+    documents = load_and_split_pdf(file_path)
+    documents = [
+        chunk
+        for chunk in documents
+        if chunk.page_content and chunk.page_content.strip()
+    ]
+
+    if not documents:
+        raise ValueError(
+            f"No extractable text found in {filename}. "
+            "The document was not indexed."
+        )
 
     with Session(engine) as session:
         active_document = session.execute(
@@ -90,7 +104,6 @@ def index_pdf(file_path: str):
 
         department, access_level = get_document_permissions(file_path)
 
-        # New document
         if not active_document:
             document_id = Path(filename).stem.replace("_", "-")
 
@@ -103,9 +116,8 @@ def index_pdf(file_path: str):
                 access_level=access_level,
                 content_hash=file_hash,
             )
-
-        # Existing document changed → create new version
         else:
+            # Archive the old version only after content validation.
             active_document.status = "archived"
 
             document = Document(
@@ -121,9 +133,6 @@ def index_pdf(file_path: str):
         session.add(document)
         session.flush()
 
-        # Parse and chunk the PDF
-        documents = load_and_split_pdf(file_path)
-
         embedding_model = get_embedding_model()
 
         for index, document_chunk in enumerate(documents):
@@ -132,7 +141,6 @@ def index_pdf(file_path: str):
             )
 
             page = document_chunk.metadata.get("page")
-
             chunk_id = (
                 f"{document.document_id}_"
                 f"v{document.version}_"
@@ -163,9 +171,6 @@ def index_pdf(file_path: str):
         )
 
 
-
-
-        
 def index_directory(directory: str):
     directory_path = Path(directory)
     pdf_files = sorted(directory_path.glob("*.pdf"))
