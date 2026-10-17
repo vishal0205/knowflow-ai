@@ -113,3 +113,55 @@ def test_successful_answer_is_logged_as_not_abstained(fakes):
     assert log["abstained"] is False
     assert log["department"] == "hr"
     assert log["latency_ms"] >= 0
+
+
+def test_greeting_is_logged(fakes):
+    pipeline.answer_question("hello")
+
+    assert len(fakes.calls["logs"]) == 1
+    assert fakes.calls["logs"][0]["abstained"] is False
+
+
+def test_out_of_scope_query_is_logged(fakes):
+    pipeline.answer_question("what is the weather today")
+
+    assert len(fakes.calls["logs"]) == 1
+    assert fakes.calls["logs"][0]["abstained"] is True
+
+
+def test_llm_exception_returns_safe_response_and_logs(fakes, monkeypatch):
+    fakes.state["reranked"] = [
+        (make_chunk("Some policy text."), 5.0)
+    ]
+
+    def failing_generate_answer(question, context):
+        raise RuntimeError("Simulated provider failure")
+
+    monkeypatch.setattr(
+        pipeline, "generate_answer", failing_generate_answer
+    )
+
+    result = pipeline.answer_question("What is the leave policy?")
+
+    assert result["error"] == "llm_unavailable"
+    assert result["abstained"] is True
+    assert "try again later" in result["answer"]
+    assert result["sources"] == []
+    assert fakes.calls["logs"][-1]["abstained"] is True
+
+
+def test_empty_llm_response_returns_safe_response_and_logs(fakes, monkeypatch):
+    fakes.state["reranked"] = [
+        (make_chunk("Some policy text."), 5.0)
+    ]
+
+    monkeypatch.setattr(
+        pipeline, "generate_answer", lambda question, context: ""
+    )
+
+    result = pipeline.answer_question("What is the leave policy?")
+
+    assert result["error"] == "llm_unavailable"
+    assert result["abstained"] is True
+    assert result["sources"] == []
+    assert fakes.calls["logs"][-1]["abstained"] is True
