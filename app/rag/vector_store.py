@@ -35,38 +35,6 @@ def get_document_permissions(file_path: str):
 
     return permissions.get(filename, ("general", "employee"))
 
-
-def get_or_create_document(
-    session: Session,
-    file_path: str,
-) -> Document:
-    filename = Path(file_path).name
-
-    document = session.execute(
-        select(Document).where(Document.filename == filename)
-    ).scalar_one_or_none()
-
-    if document:
-        return document
-
-    department, access_level = get_document_permissions(file_path)
-    document_id = Path(filename).stem.replace("_", "-")
-
-    document = Document(
-        document_id=document_id,
-        filename=filename,
-        version=1,
-        status="active",
-        department=department,
-        access_level=access_level,
-    )
-
-    session.add(document)
-    session.flush()
-
-    return document
-
-
 def index_pdf(file_path: str):
     file_hash = calculate_file_hash(file_path)
     filename = Path(file_path).name

@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
@@ -7,13 +8,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
-
-
-from datetime import datetime
-
-from sqlalchemy import DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 
 class Document(Base):
     __tablename__ = "documents"
