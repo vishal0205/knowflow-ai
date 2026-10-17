@@ -11,10 +11,21 @@ def tokenize(text: str):
     return text.lower().split()
 
 
-def get_all_documents():
+
+def get_all_documents(
+    department: str | None = None,
+    access_level: str | None = None,
+):
     with Session(engine) as session:
         stmt = (
-            select(DocumentChunk)
+            select(
+                DocumentChunk.id,
+                DocumentChunk.content,
+                DocumentChunk.source,
+                DocumentChunk.page,
+                DocumentChunk.department,
+                DocumentChunk.access_level,
+            )
             .join(
                 Document,
                 DocumentChunk.document_id == Document.id,
@@ -22,7 +33,18 @@ def get_all_documents():
             .where(Document.status == "active")
         )
 
-        return session.execute(stmt).scalars().all()
+        if department:
+            stmt = stmt.where(
+                DocumentChunk.department == department
+            )
+
+        if access_level:
+            stmt = stmt.where(
+                DocumentChunk.access_level == access_level
+            )
+
+        return session.execute(stmt).all()
+
 
 def bm25_search(
     query: str,
@@ -30,19 +52,10 @@ def bm25_search(
     department: str | None = None,
     access_level: str | None = None,
 ):
-    documents = get_all_documents()
-
-    if department:
-        documents = [
-            doc for doc in documents
-            if doc.department == department
-        ]
-
-    if access_level:
-        documents = [
-            doc for doc in documents
-            if doc.access_level == access_level
-        ]
+    documents = get_all_documents(
+        department=department,
+        access_level=access_level,
+    )
 
     if not documents:
         return []
@@ -56,7 +69,7 @@ def bm25_search(
     ranked = sorted(
         zip(documents, scores),
         key=lambda x: x[1],
-        reverse=True
+        reverse=True,
     )
 
     return ranked[:k]

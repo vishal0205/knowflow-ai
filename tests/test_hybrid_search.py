@@ -12,7 +12,6 @@ def make_chunk(chunk_id, content, department="general", access_level="employee")
         access_level=access_level,
     )
 
-
 # ---------- Reciprocal Rank Fusion ----------
 
 def test_rrf_puts_chunk_found_by_both_searches_first():
@@ -52,8 +51,11 @@ def test_bm25_ranks_chunk_with_matching_words_first(monkeypatch):
         make_chunk(2, "employees may work remotely three days per week"),
         make_chunk(3, "expense reimbursement and travel booking process"),
     ]
-    monkeypatch.setattr(hybrid_search, "get_all_documents", lambda: chunks)
-
+    monkeypatch.setattr(
+    hybrid_search,
+    "get_all_documents",
+    lambda department=None, access_level=None: chunks,
+    )
     results = bm25_search("work remotely", k=3)
 
     assert results[0][0].id == 2
@@ -61,10 +63,12 @@ def test_bm25_ranks_chunk_with_matching_words_first(monkeypatch):
 
 def test_bm25_respects_k(monkeypatch):
     chunks = [make_chunk(i, f"policy document number {i}") for i in range(1, 6)]
-    monkeypatch.setattr(hybrid_search, "get_all_documents", lambda: chunks)
-
+    monkeypatch.setattr(
+    hybrid_search,
+    "get_all_documents",
+    lambda department=None, access_level=None: chunks,
+    )
     assert len(bm25_search("policy", k=2)) == 2
-
 
 def test_bm25_filters_by_department(monkeypatch):
     chunks = [
@@ -72,13 +76,24 @@ def test_bm25_filters_by_department(monkeypatch):
         make_chunk(2, "remote work rules for hr staff", department="hr"),
         make_chunk(3, "security password rules", department="security"),
     ]
-    monkeypatch.setattr(hybrid_search, "get_all_documents", lambda: chunks)
-
+    monkeypatch.setattr(
+    hybrid_search,
+    "get_all_documents",
+    lambda department=None, access_level=None: [
+        chunk for chunk in chunks
+        if (department is None or chunk.department == department)
+        and (access_level is None or chunk.access_level == access_level)
+    ],
+    )
     results = bm25_search("remote work", k=5, department="hr")
 
     assert [doc.id for doc, _ in results] == [2]
 
 
 def test_bm25_returns_empty_list_when_no_documents(monkeypatch):
-    monkeypatch.setattr(hybrid_search, "get_all_documents", lambda: [])
+    monkeypatch.setattr(
+    hybrid_search,
+    "get_all_documents",
+    lambda department=None, access_level=None: [],
+    )
     assert bm25_search("anything") == []
