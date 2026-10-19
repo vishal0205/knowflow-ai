@@ -33,6 +33,30 @@ def test_rrf_has_no_duplicates():
     assert len(ranked) == 1
 
 
+def test_rrf_combines_vector_objects_and_bm25_rows():
+    vector_chunk = SimpleNamespace(
+        id=1,
+        content="vector result",
+    )
+    bm25_row = SimpleNamespace(
+        id=2,
+        content="BM25 result",
+        source="policy.pdf",
+        page=3,
+        department="general",
+        access_level="employee",
+    )
+
+    ranked = reciprocal_rank_fusion(
+        [vector_chunk],
+        [(bm25_row, 5.0)],
+    )
+
+    assert {chunk.id for chunk in ranked} == {1, 2}
+    assert ranked[0].id == 1
+    assert ranked[1].id == 2
+    assert ranked[1].content == "BM25 result"
+
 def test_rrf_handles_empty_inputs():
     assert reciprocal_rank_fusion([], []) == []
 
