@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-from typing import Dict
 
 from pydantic import BaseModel
 
@@ -14,8 +12,3 @@ class QueryResponse(BaseModel):
     question: str
     answer: str
     sources: list
-    
-@dataclass
-class DocumentChunk:
-    content: str
-    metadata: Dict
